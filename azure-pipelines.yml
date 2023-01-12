@@ -1,0 +1,110 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+trigger: 
+ branches:
+    include:
+      - none
+
+pool:
+  vmImage: 'ubuntu-latest'
+  parameters:
+  - name: User
+variables:
+  - name: User
+    value: 'gius.dagostino@reply.it'
+
+jobs:
+  - job: maven_build
+    displayName: 'Maven Build'
+    steps:
+      - checkout: self
+      - task: SonarQubePrepare@5
+        inputs:
+          SonarQube: 'SQ-Vodafone'
+          scannerMode: 'Other'
+          extraProperties: |
+            # Additional properties that will be passed to the scanner,
+            # Put one key=value per line, example:
+            # sonar.exclusions=**/*.bin
+            sonar.projectKey=AzureProva
+      - task: PowerShell@2
+        inputs:
+          targetType: 'inline'
+          script: |
+            # Write your PowerShell commands here.
+            
+            $params = "$env:SONARQUBE_SCANNER_PARAMS" -replace '"sonar.branch.name":"[\w/,-.]*"\,?'
+                Write-Host "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]$params"
+      - task: JavaToolInstaller@0
+        inputs:
+          versionSpec: '11'
+          jdkArchitectureOption: 'x64'
+          jdkSourceOption: 'PreInstalled'
+      - task: Maven@4
+        inputs:
+          mavenPomFile: 'pom.xml'
+          publishJUnitResults: true
+          testResultsFiles: '**/surefire-reports/TEST-*.xml'
+          javaHomeOption: 'JDKVersion'
+          mavenVersionOption: 'Default'
+          mavenAuthenticateFeed: false
+          effectivePomSkip: false
+          sonarQubeRunAnalysis: true
+          sqMavenPluginVersionChoice: 'latest'
+      - task: SonarQubePublish@5
+        inputs:
+          pollingTimeoutSec: '300'
+      - task: SnykSecurityScan@1
+        inputs:
+          serviceConnectionEndpoint: 'Snyk Connection'
+          testType: 'app'
+          monitorWhen: 'always'
+          failOnIssues: false
+
+  - job: manual_approval
+    displayName: "Manual Approval"
+    dependsOn: maven_build
+    pool: server
+    steps:
+      - task: ManualValidation@0
+        timeoutInMinutes: 300
+        inputs:
+          instructions: "Hi, please take a look at the snyk output and validate or reject according  to the vulnerabilities"
+          notifyUsers: 'gius.dagostino@reply.it'
+          onTimeout: reject
+
+  - job: maven_deploy
+    displayName: 'Maven Deploy'
+    dependsOn: manual_approval
+    steps:
+      - task: Maven@3
+        displayName: 'Maven pom.xml'
+        inputs:
+          goals: 'deploy -s settings.xml'
+      - task: CopyFiles@2
+        displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+        inputs:
+          SourceFolder: '$(system.defaultworkingdirectory)'
+          Contents: '**/*.jar'
+          TargetFolder: '$(build.artifactstagingdirectory)'
+        condition: succeededOrFailed()
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact: drop'
+        inputs:
+          PathtoPublish: target
+        condition: succeededOrFailed()
+  - job: fail
+    dependsOn: maven_deploy
+    condition: failed()
+    #steps:
+     #  - publish: '$(System.IncorrectPath)'
+  - job: createTask
+    displayName: Create Bug On Failure
+    dependsOn: fail
+    condition: failed()
+    steps:
+      - template: workitem.yml
+        parameters:
+          AssignedToUser: $(User)    
