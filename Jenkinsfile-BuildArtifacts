@@ -15,7 +15,7 @@ pipeline {
       steps {
         sh 'pwd'
         sh 'mvn clean package'
-        sh 'pwd'
+        sh 'cp -p target/JavaVulnerableLab.war /home/one/'
       }
     }
   }
