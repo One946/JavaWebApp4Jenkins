@@ -1,0 +1,11 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Deploy') {
+      steps {
+        sh 'sudo rm -rf /opt/tomcat/Java4Jenkins* && sudo cp -p /home/one/JavaVulnerableLab.war /opt/tomcat/webapp/Java4Jenkins.war'
+      }
+    }
+  }
+}
