@@ -4,7 +4,7 @@ pipeline {
   stages {
     stage('Deploy') {
       steps {
-        sh 'sudo rm -rf /opt/tomcat/Java4Jenkins* && sudo cp -p /home/one/JavaVulnerableLab.war /opt/tomcat/webapp/Java4Jenkins.war'
+        sh 'sudo rm -rf /opt/tomcat/Java4Jenkins* && sudo cp -p /home/one/JavaVulnerableLab.war /opt/tomcat/webapps/Java4Jenkins.war'
       }
     }
   }
