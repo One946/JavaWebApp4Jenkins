@@ -20,12 +20,6 @@ jobs:
     displayName: 'Maven Build'
     steps:
       - checkout: self
-      - task: SnykSecurityScan@1
-        inputs:
-          serviceConnectionEndpoint: 'Snyk Connection'
-          testType: 'app'
-          monitorWhen: 'always'
-          failOnIssues: false
       - task: InvokeRESTAPI@1
         inputs:
           connectionType: 'connectedServiceName'
@@ -43,7 +37,7 @@ jobs:
               Authorization: Basic ********
             }
           urlSuffix: 'http://130.25.14.49:8085/'
-          waitForCompletion: 'false'
+          waitForCompletion: 'true'
 
   - job: manual_approval
     displayName: "Manual Approval"
@@ -56,37 +50,3 @@ jobs:
           instructions: "Hi, please take a look at the snyk output and validate or reject according  to the vulnerabilities"
           notifyUsers: 'gius.dagostino@reply.it'
           onTimeout: reject
-
-  - job: maven_deploy
-    displayName: 'Maven Deploy'
-    dependsOn: manual_approval
-    steps:
-      - task: Maven@3
-        displayName: 'Maven pom.xml'
-        inputs:
-          goals: 'deploy -s settings.xml'
-      - task: CopyFiles@2
-        displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
-        inputs:
-          SourceFolder: '$(system.defaultworkingdirectory)'
-          Contents: '**/*.jar'
-          TargetFolder: '$(build.artifactstagingdirectory)'
-        condition: succeededOrFailed()
-      - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: drop'
-        inputs:
-          PathtoPublish: target
-        condition: succeededOrFailed()
-  - job: fail
-    dependsOn: maven_deploy
-    condition: failed()
-    #steps:
-     #  - publish: '$(System.IncorrectPath)'
-  - job: createTask
-    displayName: Create Bug On Failure
-    dependsOn: fail
-    condition: failed()
-    steps:
-      - template: workitem.yml
-        parameters:
-          AssignedToUser: $(User)    
