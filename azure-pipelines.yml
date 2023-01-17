@@ -24,20 +24,8 @@ jobs:
         inputs:
           connectionType: 'connectedServiceName'
           method: 'POST'
-          body: |
-            Method: POST
-            URI: http://130.25.14.49:8085/rest/api/latest/queue/AD-BA?os_authType=basic
-            HTTP Version: 1.1
-            Headers:
-            {
-              X-VSS-ActivityId: d5fdd625-37a9-000d-5d80-ef578c27d901
-              X-VSS-SubscriptionId: a62a96c4-43ef-4917-861a-c9984f5017d8
-              User-Agent: VSServices/19.215.33304.3
-              User-Agent: (w3wp.exe)
-              Authorization: Basic ********
-            }
           urlSuffix: 'http://130.25.14.49:8085/'
-          waitForCompletion: 'true'
+          waitForCompletion: 'false'
 
   - job: manual_approval
     displayName: "Manual Approval"
