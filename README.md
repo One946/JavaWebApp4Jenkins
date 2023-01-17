@@ -1,4 +1,4 @@
-
+AAAAAAAAAAAAAAAAA
 **The full course content is now available on Github for free:**
 
 https://github.com/CSPF-Founder/JavaSecurityCourse
