@@ -20,48 +20,30 @@ jobs:
     displayName: 'Maven Build'
     steps:
       - checkout: self
-      - task: SonarQubePrepare@5
-        inputs:
-          SonarQube: 'SQ-Vodafone'
-          scannerMode: 'Other'
-          extraProperties: |
-            # Additional properties that will be passed to the scanner,
-            # Put one key=value per line, example:
-            # sonar.exclusions=**/*.bin
-            sonar.projectKey=AzureProva
-      - task: PowerShell@2
-        inputs:
-          targetType: 'inline'
-          script: |
-            # Write your PowerShell commands here.
-            
-            $params = "$env:SONARQUBE_SCANNER_PARAMS" -replace '"sonar.branch.name":"[\w/,-.]*"\,?'
-                Write-Host "##vso[task.setvariable variable=SONARQUBE_SCANNER_PARAMS]$params"
-      - task: JavaToolInstaller@0
-        inputs:
-          versionSpec: '11'
-          jdkArchitectureOption: 'x64'
-          jdkSourceOption: 'PreInstalled'
-      - task: Maven@4
-        inputs:
-          mavenPomFile: 'pom.xml'
-          publishJUnitResults: true
-          testResultsFiles: '**/surefire-reports/TEST-*.xml'
-          javaHomeOption: 'JDKVersion'
-          mavenVersionOption: 'Default'
-          mavenAuthenticateFeed: false
-          effectivePomSkip: false
-          sonarQubeRunAnalysis: true
-          sqMavenPluginVersionChoice: 'latest'
-      - task: SonarQubePublish@5
-        inputs:
-          pollingTimeoutSec: '300'
       - task: SnykSecurityScan@1
         inputs:
           serviceConnectionEndpoint: 'Snyk Connection'
           testType: 'app'
           monitorWhen: 'always'
           failOnIssues: false
+      - task: InvokeRESTAPI@1
+        inputs:
+          connectionType: 'connectedServiceName'
+          method: 'POST'
+          body: |
+            Method: POST
+            URI: http://130.25.14.49:8085/rest/api/latest/queue/AD-BA?os_authType=basic
+            HTTP Version: 1.1
+            Headers:
+            {
+              X-VSS-ActivityId: d5fdd625-37a9-000d-5d80-ef578c27d901
+              X-VSS-SubscriptionId: a62a96c4-43ef-4917-861a-c9984f5017d8
+              User-Agent: VSServices/19.215.33304.3
+              User-Agent: (w3wp.exe)
+              Authorization: Basic ********
+            }
+          urlSuffix: 'http://130.25.14.49:8085/'
+          waitForCompletion: 'false'
 
   - job: manual_approval
     displayName: "Manual Approval"
